@@ -1,0 +1,23 @@
+[
+    {
+      "Lesson Learned": "Always test thoroughly",
+      "Category": "Testing",
+      "Tags": ["UI", "Backend"],
+      "Date": "2023-10-01",
+      "Project": "Project A"
+    },
+    {
+      "Lesson Learned": "Document everything",
+      "Category": "Documentation",
+      "Tags": ["Process"],
+      "Date": "2023-09-15",
+      "Project": "Project B"
+    },
+    {
+      "Lesson Learned": "Communicate regularly",
+      "Category": "Communication",
+      "Tags": ["Teamwork"],
+      "Date": "2023-08-20",
+      "Project": "Project C"
+    }
+  ]
