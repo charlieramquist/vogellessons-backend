@@ -78,7 +78,7 @@ def fetch_excel():
             # "Category",
             # "Date:",
             # "Name"
-        ]
+        
         df_filtered = df_filtered.fillna("")
         json_data = df_filtered.to_dict(orient="records")
 
