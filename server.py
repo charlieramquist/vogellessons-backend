@@ -71,15 +71,15 @@ def fetch_excel():
         df.columns = df.columns.str.strip()
         df_filtered = df[df["Approval"].astype(str).str.upper() == "TRUE"]
 
-        # selected_columns = [
-            # "Lesson Learned:",
-            # "Job Number",
-            # "Relevant Spec Section:",
-            # "Category",
-            # "Date:",
-            # "Name"
-        
-        df_filtered = df_filtered.fillna("")
+        selected_columns = [
+            "Lesson Learned:",
+            "Job Number",
+            "Relevant Spec Section:",
+            "Category",
+            "Date:",
+            "Name"
+        ]
+        df_filtered = df_filtered[selected_columns].fillna("")
         json_data = df_filtered.to_dict(orient="records")
 
         print("✅ Sending clean JSON data to frontend.")
