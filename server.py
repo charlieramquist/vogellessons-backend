@@ -27,8 +27,12 @@ EXPECTED_AUDIENCE = "00000003-0000-0000-c000-000000000000"  # Graph API audience
 def validate_token(access_token):
     try:
         print("🔹 Using Microsoft to validate token...")
-        headers = {"Authorization": f"Bearer {access_token}"}
-        response = requests.get("https://graph.microsoft.com/v1.0/me", headers=headers)
+        # headers = {"Authorization": f"Bearer {access_token}"}
+        # response = requests.get("https://graph.microsoft.com/v1.0/me", headers=headers)
+        SHAREPOINT_FILE_URL = "https://vogelbldg-my.sharepoint.com/:x:/p/cramquist/EQqxtE0ewQlBjiZ5hnkz7bQBEFDAyMnSLqZQ5Xa0M6j1sQ?e=n8l6RE"
+        response = requests.get(SHAREPOINT_FILE_URL)
+
+
 
         if response.status_code == 200:
             user_data = response.json()
@@ -42,6 +46,7 @@ def validate_token(access_token):
         return None
 
 # ✅ Route to fetch the Excel file from SharePoint
+
 @app.route('/fetch-excel', methods=['GET'])
 def fetch_excel():
     try:
@@ -57,8 +62,8 @@ def fetch_excel():
 
         print(f"🔹 Token validated for user: {user_data['displayName']} - Fetching file...")
 
-        headers = {"Authorization": f"Bearer {access_token}"}
-        response = requests.get(SHAREPOINT_FILE_URL, headers=headers)
+        # ✅ This fetches your public file — you can now remove the token header if not needed:
+        response = requests.get(SHAREPOINT_FILE_URL)
 
         if response.status_code != 200:
             return jsonify({"error": f"Failed to fetch file: {response.text}"}), response.status_code
@@ -66,16 +71,7 @@ def fetch_excel():
         df = pd.read_excel(io.BytesIO(response.content), engine="openpyxl")
         df.columns = df.columns.str.strip()
         df_filtered = df[df["Approval"].astype(str).str.upper() == "TRUE"]
-
-        selected_columns = [
-            "Lesson Learned:",
-            "Job Number",
-            "Relevant Spec Section:",
-            "Category",
-            "Date:",
-            "Name"
-        ]
-        df_filtered = df_filtered[selected_columns].fillna("")
+        df_filtered = df_filtered.fillna("")
         json_data = df_filtered.to_dict(orient="records")
 
         print("✅ Sending clean JSON data to frontend.")
@@ -84,6 +80,8 @@ def fetch_excel():
     except Exception as e:
         print(f"🚨 Server Error: {str(e)}")
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+
 
 @app.route('/')
 def home():
