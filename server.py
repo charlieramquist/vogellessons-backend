@@ -67,16 +67,15 @@ def fetch_excel():
         df.columns = df.columns.str.strip()
         df_filtered = df[df["Approval"].astype(str).str.upper() == "TRUE"]
 
-        # selected_columns = [
-        #     "Lesson Learned:",
-        #     "Job Number",
-        #     "Relevant Spec Section:",
-        #     "Category",
-        #     "Date:",
-        #     "Name"
-        # ]
-        # df_filtered = df_filtered[selected_columns].fillna("")
-        df_filtered = df_filtered.fillna("")
+        selected_columns = [
+            "Lesson Learned:",
+            "Job Number",
+            "Relevant Spec Section:",
+            "Category",
+            "Date:",
+            "Name"
+        ]
+        df_filtered = df_filtered[selected_columns].fillna("")
         json_data = df_filtered.to_dict(orient="records")
 
         print("✅ Sending clean JSON data to frontend.")
@@ -95,56 +94,3 @@ def home():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
-
-
-# import os
-# import requests
-# import pandas as pd
-# import io
-# from flask import Flask, jsonify
-# from flask_cors import CORS
-
-# app = Flask(__name__)
-
-# # ✅ Enable CORS for your frontend
-# CORS(app, resources={r"/*": {
-#     "origins": "https://vogellessons.com",
-#     "methods": ["GET", "POST", "OPTIONS"],
-#     "allow_headers": ["Authorization", "Content-Type"]
-# }})
-
-# # ✅ Public SharePoint Excel file URL
-# SHAREPOINT_FILE_URL = "https://vogelbldg-my.sharepoint.com/:x:/p/cramquist/EQqxtE0ewQlBjiZ5hnkz7bQBEFDAyMnSLqZQ5Xa0M6j1sQ?e=n8l6RE"
-
-# # ✅ Route to fetch Excel data
-# @app.route('/fetch-excel', methods=['GET'])
-# def fetch_excel():
-#     try:
-#         print("🔹 Fetching public SharePoint file (no auth)...")
-#         response = requests.get(SHAREPOINT_FILE_URL)
-
-#         if response.status_code != 200:
-#             return jsonify({"error": f"Failed to fetch file: {response.text}"}), response.status_code
-
-#         df = pd.read_excel(io.BytesIO(response.content), engine="openpyxl")
-#         df.columns = df.columns.str.strip()
-#         df_filtered = df[df["Approval"].astype(str).str.upper() == "TRUE"]
-#         df_filtered = df_filtered.fillna("")
-#         json_data = df_filtered.to_dict(orient="records")
-
-#         print("✅ Sending full dataset to frontend.")
-#         return jsonify(json_data)
-
-#     except Exception as e:
-#         print(f"🚨 Server Error: {str(e)}")
-#         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
-
-# # ✅ Root route (for testing backend status)
-# @app.route('/')
-# def home():
-#     return "Backend is running!"
-
-# # ✅ Start the app (only used when running locally)
-# if __name__ == '__main__':
-#     port = int(os.environ.get("PORT", 5000))
-#     app.run(debug=True, host="0.0.0.0", port=port)
