@@ -28,20 +28,26 @@ EXPECTED_AUDIENCE = "00000003-0000-0000-c000-000000000000"  # Graph API audience
 # ✅ Validate token using Microsoft Graph
 def validate_token(access_token):
     try:
-        print("🔹 Using Microsoft to validate token...")
+        print("➡️ Starting token validation")
+        print("🔑 Token snippet:", access_token[:30] + "...")
+
         headers = {"Authorization": f"Bearer {access_token}"}
         response = requests.get("https://graph.microsoft.com/v1.0/me", headers=headers)
+
+        print("📬 Microsoft response code:", response.status_code)
+        print("📬 Response text:", response.text)
 
         if response.status_code == 200:
             user_data = response.json()
             print("✅ Token is valid. User:", user_data["displayName"])
             return user_data
         else:
-            print("🚨 Microsoft rejected the token:", response.text)
+            print("🚨 Microsoft rejected the token.")
             return None
     except Exception as e:
         print("🚨 Token validation failed:", str(e))
         return None
+
 
 # ✅ Route to fetch the Excel file from SharePoint
 @app.route('/fetch-excel', methods=['GET'])
