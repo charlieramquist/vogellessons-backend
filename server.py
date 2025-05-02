@@ -6,6 +6,8 @@ import jwt
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from jwt import PyJWKClient
+import json
+import openai
 
 app = Flask(__name__)
 
@@ -133,6 +135,88 @@ def search_lessons():
     except Exception as e:
         print(f"🚨 Search Error: {str(e)}")
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+
+
+
+
+
+
+# Set your OpenAI API key
+import os
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+
+@app.route('/ask-assistant', methods=['POST'])
+def ask_assistant():
+    try:
+        data = request.get_json()
+        message = data.get("message", "").strip()
+        access_token = data.get("token", "").strip()
+
+        if not message or not access_token:
+            return jsonify({"error": "Missing message or token"}), 400
+
+        # Validate token with Microsoft (optional but recommended)
+        user = validate_token(access_token)
+        if not user:
+            return jsonify({"error": "Invalid Microsoft token"}), 401
+
+        # === ASSISTANT WORKFLOW ===
+        assistant_id = "asst_qIH7TNF3KcWFOOSiCQ146F1L"  # your Assistant ID
+
+        thread = openai.beta.threads.create()
+        openai.beta.threads.messages.create(thread_id=thread.id, role="user", content=message)
+        run = openai.beta.threads.runs.create(thread_id=thread.id, assistant_id=assistant_id)
+
+        # Wait for function call
+        import time
+        while run.status not in ["completed", "requires_action", "failed"]:
+            time.sleep(1)
+            run = openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+
+        if run.status == "requires_action":
+            tool_call = run.required_action.submit_tool_outputs.tool_calls[0]
+            query = eval(tool_call.function.arguments)["query"]
+
+            # Call internal search
+            lessons_res = requests.post(
+                "https://vogellessons-backend.onrender.com/search-lessons",
+                json={"query": query},
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            lessons = lessons_res.json().get("results", [])
+            tool_output = {
+                "matches_found": len(lessons) > 0,
+                "matches": lessons
+            }
+
+            openai.beta.threads.runs.submit_tool_outputs(
+                thread_id=thread.id,
+                run_id=run.id,
+                tool_outputs=[{
+                    "tool_call_id": tool_call.id,
+                    "output": json.dumps(tool_output)
+                }]
+            )
+
+            # Wait again for final reply
+            while run.status != "completed":
+                time.sleep(1)
+                run = openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+
+        # Get the assistant's reply
+        messages = openai.beta.threads.messages.list(thread_id=thread.id)
+        for m in messages.data[::-1]:
+            if m.role == "assistant":
+                return jsonify({"reply": m.content[0].text.value})
+
+        return jsonify({"error": "No assistant response found"}), 500
+
+    except Exception as e:
+        print("🚨 Assistant error:", str(e))
+        return jsonify({"error": str(e)}), 500
+
 
 
 
