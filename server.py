@@ -92,6 +92,53 @@ def home():
     return "Backend is running!"
 
 
+
+@app.route('/search-lessons', methods=['POST'])
+def search_lessons():
+    try:
+        access_token = request.headers.get("Authorization")
+        if not access_token:
+            return jsonify({"error": "Missing access token in request"}), 401
+
+        access_token = access_token.replace("Bearer ", "").strip()
+
+        user_data = validate_token(access_token)
+        if not user_data:
+            return jsonify({"error": "Invalid or expired access token"}), 401
+
+        query = request.get_json().get("query", "").strip().lower()
+        if not query:
+            return jsonify({"error": "Missing 'query' in request body"}), 400
+
+        print(f"🔍 Searching for lessons matching: '{query}'")
+
+        headers = {"Authorization": f"Bearer {access_token}"}
+        response = requests.get(SHAREPOINT_FILE_URL, headers=headers)
+
+        if response.status_code != 200:
+            return jsonify({"error": f"Failed to fetch file: {response.text}"}), response.status_code
+
+        df = pd.read_excel(io.BytesIO(response.content), engine="openpyxl")
+        df.columns = df.columns.str.strip()
+        df_filtered = df[df["Approval"].astype(str).str.upper() == "TRUE"].fillna("")
+
+        # Filter for rows that match the query in any column
+        df_matched = df_filtered[
+            df_filtered.apply(lambda row: row.astype(str).str.lower().str.contains(query).any(), axis=1)
+        ]
+
+        print(f"✅ Found {len(df_matched)} matching lessons.")
+        return jsonify({"results": df_matched.to_dict(orient="records")})
+
+    except Exception as e:
+        print(f"🚨 Search Error: {str(e)}")
+        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+
+
+
+
+
+
 # ✅ Start the app only if run directly (Render handles this automatically)
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
